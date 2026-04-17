@@ -1,4 +1,4 @@
-import type { ProducerLike } from "../src/client";
+import type { ProducerLike } from "@eka-care/usage-sdk";
 
 export class MockProducer implements ProducerLike {
   public sent: { topic: string; key: string; value: string }[] = [];

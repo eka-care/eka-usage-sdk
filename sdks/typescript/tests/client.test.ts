@@ -1,4 +1,4 @@
-import { EkaClient } from "../src/client";
+import { EkaClient } from "@eka-care/usage-sdk";
 import { MockProducer } from "./mockProducer";
 
 function makeClient(onError?: (e: Error, ctx?: Record<string, unknown>) => void) {
