@@ -1,16 +1,15 @@
 # Integration guide
 
-The Eka Usage SDK ships two streams to Kafka:
+The Eka Usage SDK ships metered usage events to Kafka on a single topic:
+`eka.usage.events`. When `status="error"`, the metadata JSON serves as the
+error log — no separate logging method or topic needed.
 
-- `eka.usage.events` — metered product usage (billable and non-billable)
-- `eka.service.logs` — critical application logs
+Every SDK exposes the same three-method surface:
+`EkaClient(...)`, `record(...)`, `shutdown()`.
 
-Every SDK exposes the same four-method surface:
-`EkaClient(...)`, `record(...)`, `log(...)`, `shutdown()`.
-
-The SDKs are non-blocking: `record` and `log` return immediately. Kafka I/O
-happens on a background worker. Errors never propagate to the caller — they go
-to the `on_error` callback you supply.
+The SDKs are non-blocking: `record` returns immediately. Kafka I/O happens on
+a background worker. Errors never propagate to the caller — they go to the
+`on_error` callback you supply.
 
 ## Golden rules
 
@@ -43,9 +42,9 @@ client = EkaClient(
 client.record("ws_123", "ekascribe", "transcription_minute", quantity=8.2,
               metadata={"patient_id": "p_abc"})
 
-# Critical log
-client.log("ws_123", "error", "ffmpeg failed", code="FFMPEG_EXIT_137",
-           metadata={"file_id": "f_42"})
+# Error event — metadata is the error log
+client.record("ws_123", "api", "api_error", status="error",
+              metadata={"error": "upstream timeout", "endpoint": "/v1/records"})
 
 # On shutdown (e.g. in an atexit or signal handler)
 client.shutdown()
@@ -55,7 +54,7 @@ Or as a context manager:
 
 ```python
 with EkaClient(service_name="svc") as c:
-    c.record("ws_123", "api", "api_call")
+    c.record("ws_123", "api", "api_call", unit_cost=0.05)
 ```
 
 ## TypeScript / Node.js
@@ -76,10 +75,11 @@ const client = new EkaClient({
 
 await client.connect();  // required once on startup
 
-client.record("ws_123", "ekascribe", "transcription_minute", 8.2, "ok",
-              { patient_id: "p_abc" });
-client.log("ws_123", "error", "ffmpeg failed", "FFMPEG_EXIT_137",
-           { file_id: "f_42" });
+client.record("ws_123", "ekascribe", "transcription_minute", 8.2);
+
+// error event — metadata is the error log
+client.record("ws_123", "api", "api_error", 1, "error", undefined,
+              { error: "upstream timeout", endpoint: "/v1/records" });
 
 process.on("SIGTERM", () => client.shutdown());
 ```
@@ -104,10 +104,12 @@ if err != nil {
 }
 defer client.Shutdown()
 
-client.Record("ws_123", "ekascribe", "transcription_minute", 8.2, "ok",
+client.Record("ws_123", "ekascribe", "transcription_minute", 8.2, "ok", nil,
     map[string]any{"patient_id": "p_abc"})
-client.Log("ws_123", "error", "ffmpeg failed", "FFMPEG_EXIT_137",
-    map[string]any{"file_id": "f_42"})
+
+// error event — metadata is the error log
+client.Record("ws_123", "api", "api_error", 1, "error", nil,
+    map[string]any{"error": "upstream timeout"})
 ```
 
 Build with `-tags confluent` to link the real Kafka producer. Without the tag,
@@ -127,5 +129,5 @@ the Go SDK compiles cleanly but expects you to pass a `Producer` via
   down for long enough to fill it, new events are dropped and `on_error` fires
   with `reason=local_queue_full`. This is intentional — we favor keeping the
   host application healthy over preserving every event.
-- **Partitioning.** `workspace_id` is the partition key on both topics, which
-  keeps per-workspace events in order and gives the sink good write locality.
+- **Partitioning.** `workspace_id` is the partition key, which keeps
+  per-workspace events in order and gives the sink good write locality.

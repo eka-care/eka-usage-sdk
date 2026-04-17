@@ -18,6 +18,5 @@ func main() {
 	}
 	defer client.Shutdown()
 
-	client.Record("ws_123", "ekascribe", "transcription_minute", 8.2, "ok", nil)
-	client.Log("ws_123", "error", "ffmpeg failed", "FFMPEG_EXIT_137", nil)
+	client.Record("ws_123", "ekascribe", "transcription_minute", 8.2, "ok", nil, nil)
 }

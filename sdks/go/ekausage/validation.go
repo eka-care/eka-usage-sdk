@@ -36,15 +36,5 @@ func validateUsage(product, metricType string, quantity float64, status string) 
 	return nil
 }
 
-func validateLog(level, message string) error {
-	if !contains(LogLevels, level) {
-		return &ValidationError{Msg: fmt.Sprintf("invalid level '%s'", level)}
-	}
-	if strings.TrimSpace(message) == "" {
-		return &ValidationError{Msg: "message must be non-empty"}
-	}
-	return nil
-}
-
 var ErrBufferFull = errors.New("buffer full")
 var ErrClosed = errors.New("client closed")

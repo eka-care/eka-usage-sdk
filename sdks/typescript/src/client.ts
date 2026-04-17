@@ -4,14 +4,12 @@ import {
   ENV_KAFKA_BROKERS,
   ENV_KAFKA_COMPRESSION_TYPE,
   ENV_KAFKA_RETRIES,
-  LOGS_TOPIC,
-  LogLevel,
   SDK_LANGUAGE,
   SDK_VERSION,
   Status,
   USAGE_TOPIC,
 } from "./constants";
-import { safeStringify, validateLog, validateUsage } from "./validation";
+import { safeStringify, validateUsage } from "./validation";
 
 export interface ProducerLike {
   send(args: {
@@ -148,6 +146,7 @@ export class EkaClient {
     metricType: string,
     quantity: number = 1.0,
     status: Status = "ok",
+    unitCost?: number | null,
     metadata: Record<string, unknown> = {},
   ): void {
     try {
@@ -159,6 +158,7 @@ export class EkaClient {
         product,
         metric_type: metricType,
         quantity: Number(quantity),
+        unit_cost: unitCost != null ? Number(unitCost) : null,
         status,
         is_billable: status === "ok" ? 1 : 0,
         metadata: safeStringify(metadata),
@@ -170,34 +170,6 @@ export class EkaClient {
       this.enqueue(USAGE_TOPIC, workspaceId, event);
     } catch (e) {
       this.handleError(e, { workspaceId, product, metricType });
-    }
-  }
-
-  log(
-    workspaceId: string,
-    level: LogLevel | string,
-    message: string,
-    code?: string,
-    metadata: Record<string, unknown> = {},
-  ): void {
-    try {
-      if (!workspaceId) throw new Error("workspaceId required");
-      validateLog(level, message);
-      const event = {
-        workspace_id: workspaceId,
-        service_name: this.serviceName,
-        level,
-        message,
-        code: code ?? null,
-        metadata: safeStringify(metadata),
-        sdk_language: SDK_LANGUAGE,
-        sdk_version: SDK_VERSION,
-        hostname: this.hostname,
-        ts: nowIso(),
-      };
-      this.enqueue(LOGS_TOPIC, workspaceId, event);
-    } catch (e) {
-      this.handleError(e, { workspaceId, level });
     }
   }
 

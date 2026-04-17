@@ -1,11 +1,8 @@
 import {
-  LOG_LEVELS,
-  LogLevel,
   METRIC_TYPES,
   PRODUCTS,
   Product,
   STATUSES,
-  Status,
 } from "./constants";
 
 export class ValidationError extends Error {
@@ -39,17 +36,6 @@ export function validateUsage(
   }
   if (typeof quantity !== "number" || !isFinite(quantity) || quantity < 0) {
     throw new ValidationError(`quantity must be non-negative finite number`);
-  }
-}
-
-export function validateLog(level: string, message: string): void {
-  if (!(LOG_LEVELS as readonly string[]).includes(level)) {
-    throw new ValidationError(
-      `invalid level '${level}', allowed=${LOG_LEVELS.join(",")}`,
-    );
-  }
-  if (typeof message !== "string" || message.trim().length === 0) {
-    throw new ValidationError("message must be non-empty string");
   }
 }
 

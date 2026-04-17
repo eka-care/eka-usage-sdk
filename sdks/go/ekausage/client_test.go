@@ -55,9 +55,11 @@ func waitForSent(mp *mockProducer, n int, d time.Duration) bool {
 	return false
 }
 
+func float64Ptr(v float64) *float64 { return &v }
+
 func TestRecordValidEvent(t *testing.T) {
 	c, mp := newTestClient(t, nil)
-	c.Record("ws_1", "ekascribe", "transcription_minute", 12.5, "ok", nil)
+	c.Record("ws_1", "ekascribe", "transcription_minute", 12.5, "ok", nil, nil)
 	c.Shutdown()
 	if len(mp.Sent()) != 1 {
 		t.Fatalf("expected 1 sent, got %d", len(mp.Sent()))
@@ -75,6 +77,9 @@ func TestRecordValidEvent(t *testing.T) {
 	if evt["is_billable"].(float64) != 1 {
 		t.Fatalf("is_billable should be 1")
 	}
+	if evt["unit_cost"] != nil {
+		t.Fatalf("unit_cost should be nil, got %v", evt["unit_cost"])
+	}
 	if mp.Sent()[0].topic != UsageTopic {
 		t.Fatal("wrong topic")
 	}
@@ -86,7 +91,7 @@ func TestRecordValidEvent(t *testing.T) {
 func TestRecordInvalidProduct(t *testing.T) {
 	var errs []error
 	c, mp := newTestClient(t, func(e error, _ map[string]any) { errs = append(errs, e) })
-	c.Record("ws_1", "bogus", "api_call", 1, "ok", nil)
+	c.Record("ws_1", "bogus", "api_call", 1, "ok", nil, nil)
 	c.Shutdown()
 	if len(mp.Sent()) != 0 {
 		t.Fatal("should not produce")
@@ -99,7 +104,7 @@ func TestRecordInvalidProduct(t *testing.T) {
 func TestRecordMissingWorkspaceID(t *testing.T) {
 	var errs []error
 	c, mp := newTestClient(t, func(e error, _ map[string]any) { errs = append(errs, e) })
-	c.Record("", "api", "api_call", 1, "ok", nil)
+	c.Record("", "api", "api_call", 1, "ok", nil, nil)
 	c.Shutdown()
 	if len(mp.Sent()) != 0 {
 		t.Fatal("should not produce")
@@ -111,7 +116,7 @@ func TestRecordMissingWorkspaceID(t *testing.T) {
 
 func TestRecordErrorStatusSetsBillableZero(t *testing.T) {
 	c, mp := newTestClient(t, nil)
-	c.Record("ws_1", "api", "api_error", 1, "error", nil)
+	c.Record("ws_1", "api", "api_error", 1, "error", nil, nil)
 	c.Shutdown()
 	var evt map[string]any
 	_ = json.Unmarshal(mp.Sent()[0].value, &evt)
@@ -122,7 +127,7 @@ func TestRecordErrorStatusSetsBillableZero(t *testing.T) {
 
 func TestRecordNonSerializable(t *testing.T) {
 	c, mp := newTestClient(t, nil)
-	c.Record("ws_1", "api", "api_call", 1, "ok", map[string]any{"ch": make(chan int)})
+	c.Record("ws_1", "api", "api_call", 1, "ok", nil, map[string]any{"ch": make(chan int)})
 	c.Shutdown()
 	if len(mp.Sent()) != 1 {
 		t.Fatalf("expected 1 sent, got %d", len(mp.Sent()))
@@ -131,8 +136,8 @@ func TestRecordNonSerializable(t *testing.T) {
 
 func TestRecordDifferentWorkspacesPartitioned(t *testing.T) {
 	c, mp := newTestClient(t, nil)
-	c.Record("ws_a", "api", "api_call", 1, "ok", nil)
-	c.Record("ws_b", "api", "api_call", 1, "ok", nil)
+	c.Record("ws_a", "api", "api_call", 1, "ok", nil, nil)
+	c.Record("ws_b", "api", "api_call", 1, "ok", nil, nil)
 	c.Shutdown()
 	sent := mp.Sent()
 	if len(sent) != 2 {
@@ -143,59 +148,21 @@ func TestRecordDifferentWorkspacesPartitioned(t *testing.T) {
 	}
 }
 
-func TestLogValid(t *testing.T) {
+func TestRecordUnitCost(t *testing.T) {
 	c, mp := newTestClient(t, nil)
-	c.Log("ws_1", "error", "db timeout", "DB_TIMEOUT", map[string]any{"qms": 5200})
+	c.Record("ws_1", "ekascribe", "transcription_minute", 5.0, "ok", float64Ptr(0.12), nil)
 	c.Shutdown()
-	if len(mp.Sent()) != 1 {
-		t.Fatal("expected 1 sent")
-	}
 	var evt map[string]any
 	_ = json.Unmarshal(mp.Sent()[0].value, &evt)
-	if evt["workspace_id"] != "ws_1" {
-		t.Fatalf("wrong workspace_id: %v", evt["workspace_id"])
-	}
-	if evt["level"] != "error" || evt["code"] != "DB_TIMEOUT" {
-		t.Fatalf("bad event: %v", evt)
-	}
-	if mp.Sent()[0].topic != LogsTopic {
-		t.Fatal("wrong topic")
-	}
-	if string(mp.Sent()[0].key) != "ws_1" {
-		t.Fatal("wrong key")
-	}
-}
-
-func TestLogEmptyMessage(t *testing.T) {
-	var errs []error
-	c, mp := newTestClient(t, func(e error, _ map[string]any) { errs = append(errs, e) })
-	c.Log("ws_1", "error", "", "", nil)
-	c.Shutdown()
-	if len(mp.Sent()) != 0 {
-		t.Fatal("should not produce empty message")
-	}
-	if len(errs) != 1 {
-		t.Fatal("expected validation error")
-	}
-}
-
-func TestLogMissingWorkspaceID(t *testing.T) {
-	var errs []error
-	c, mp := newTestClient(t, func(e error, _ map[string]any) { errs = append(errs, e) })
-	c.Log("", "error", "boom", "", nil)
-	c.Shutdown()
-	if len(mp.Sent()) != 0 {
-		t.Fatal("should not produce")
-	}
-	if len(errs) != 1 {
-		t.Fatalf("expected 1 err, got %d", len(errs))
+	if evt["unit_cost"].(float64) != 0.12 {
+		t.Fatalf("unit_cost should be 0.12, got %v", evt["unit_cost"])
 	}
 }
 
 func TestShutdownFlushesPending(t *testing.T) {
 	c, mp := newTestClient(t, nil)
 	for i := 0; i < 50; i++ {
-		c.Record("ws_1", "api", "api_call", 1, "ok", nil)
+		c.Record("ws_1", "api", "api_call", 1, "ok", nil, nil)
 	}
 	c.Shutdown()
 	if len(mp.Sent()) != 50 {
@@ -213,7 +180,7 @@ func TestRecordNonBlocking(t *testing.T) {
 	c, _ := newTestClient(t, nil)
 	defer c.Shutdown()
 	start := time.Now()
-	c.Record("ws_1", "api", "api_call", 1, "ok", nil)
+	c.Record("ws_1", "api", "api_call", 1, "ok", nil, nil)
 	elapsed := time.Since(start)
 	if elapsed > time.Millisecond {
 		t.Fatalf("record took %v, must be <1ms", elapsed)
@@ -232,7 +199,7 @@ func TestBufferFullCallsOnError(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i := 0; i < 1000; i++ {
-		c.Record("ws_1", "api", "api_call", 1, "ok", nil)
+		c.Record("ws_1", "api", "api_call", 1, "ok", nil, nil)
 	}
 	c.Shutdown()
 	_ = waitForSent(mp, 1, time.Second)

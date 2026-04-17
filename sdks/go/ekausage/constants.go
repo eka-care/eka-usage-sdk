@@ -5,9 +5,7 @@ const (
 	SDKLanguage = "go"
 
 	UsageTopic = "eka.usage.events"
-	LogsTopic  = "eka.service.logs"
 	UsageDLQ   = "eka.usage.events.dlq"
-	LogsDLQ    = "eka.service.logs.dlq"
 
 	EnvKafkaBrokers         = "EKA_KAFKA_BROKERS"
 	EnvKafkaLingerMs        = "EKA_KAFKA_LINGER_MS"
@@ -34,4 +32,3 @@ var MetricTypes = map[string][]string{
 }
 
 var Statuses = []string{"ok", "error"}
-var LogLevels = []string{"error", "critical", "warning"}

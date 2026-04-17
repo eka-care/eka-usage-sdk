@@ -63,7 +63,7 @@ describe("EkaClient.record", () => {
     const { client, mp } = makeClient();
     const cyc: Record<string, unknown> = {};
     (cyc as any).self = cyc;
-    client.record("ws_1", "api", "api_call", 1, "ok", cyc);
+    client.record("ws_1", "api", "api_call", 1, "ok", undefined, cyc);
     await client.shutdown();
     expect(mp.sent).toHaveLength(1);
     const evt = JSON.parse(mp.sent[0].value);
@@ -86,6 +86,22 @@ describe("EkaClient.record", () => {
     expect(mp.sent.map((m) => m.key)).toEqual(["ws_a", "ws_b"]);
   });
 
+  test("unit_cost sent when provided", async () => {
+    const { client, mp } = makeClient();
+    client.record("ws_1", "ekascribe", "transcription_minute", 5.0, "ok", 0.12);
+    await client.shutdown();
+    const evt = JSON.parse(mp.sent[0].value);
+    expect(evt.unit_cost).toBe(0.12);
+  });
+
+  test("unit_cost defaults to null", async () => {
+    const { client, mp } = makeClient();
+    client.record("ws_1", "api", "api_call");
+    await client.shutdown();
+    const evt = JSON.parse(mp.sent[0].value);
+    expect(evt.unit_cost).toBeNull();
+  });
+
   test("non-blocking", async () => {
     const { client } = makeClient();
     const start = process.hrtime.bigint();
@@ -93,47 +109,6 @@ describe("EkaClient.record", () => {
     const elapsedMs = Number(process.hrtime.bigint() - start) / 1e6;
     await client.shutdown();
     expect(elapsedMs).toBeLessThan(1.0);
-  });
-});
-
-describe("EkaClient.log", () => {
-  test("valid", async () => {
-    const { client, mp } = makeClient();
-    client.log("ws_1", "error", "db timeout", "DB_TIMEOUT", { qms: 5200 });
-    await client.shutdown();
-    expect(mp.sent).toHaveLength(1);
-    const evt = JSON.parse(mp.sent[0].value);
-    expect(evt.workspace_id).toBe("ws_1");
-    expect(evt.level).toBe("error");
-    expect(evt.code).toBe("DB_TIMEOUT");
-    expect(mp.sent[0].topic).toBe("eka.service.logs");
-    expect(mp.sent[0].key).toBe("ws_1");
-  });
-
-  test("empty message rejected", async () => {
-    const errs: Error[] = [];
-    const { client, mp } = makeClient((e) => errs.push(e));
-    client.log("ws_1", "error", "");
-    await client.shutdown();
-    expect(mp.sent).toHaveLength(0);
-    expect(errs).toHaveLength(1);
-  });
-
-  test("invalid level", async () => {
-    const errs: Error[] = [];
-    const { client } = makeClient((e) => errs.push(e));
-    client.log("ws_1", "info" as any, "x");
-    await client.shutdown();
-    expect(errs).toHaveLength(1);
-  });
-
-  test("missing workspaceId", async () => {
-    const errs: Error[] = [];
-    const { client, mp } = makeClient((e) => errs.push(e));
-    client.log("", "error", "boom");
-    await client.shutdown();
-    expect(mp.sent).toHaveLength(0);
-    expect(errs).toHaveLength(1);
   });
 });
 

@@ -1,4 +1,4 @@
-from .constants import PRODUCTS, METRIC_TYPES, STATUSES, LOG_LEVELS
+from .constants import PRODUCTS, METRIC_TYPES, STATUSES
 
 
 class ValidationError(ValueError):
@@ -17,10 +17,3 @@ def validate_usage(product: str, metric_type: str, quantity: float, status: str)
         raise ValidationError(f"invalid status '{status}', allowed={STATUSES}")
     if not isinstance(quantity, (int, float)) or quantity < 0:
         raise ValidationError(f"quantity must be non-negative number, got {quantity!r}")
-
-
-def validate_log(level: str, message: str) -> None:
-    if level not in LOG_LEVELS:
-        raise ValidationError(f"invalid level '{level}', allowed={LOG_LEVELS}")
-    if not isinstance(message, str) or not message.strip():
-        raise ValidationError("message must be non-empty string")

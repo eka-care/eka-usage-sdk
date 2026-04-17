@@ -102,7 +102,7 @@ func New(serviceName string, opts ...Option) (*Client, error) {
 	return c, nil
 }
 
-func (c *Client) Record(workspaceID, product, metricType string, quantity float64, status string, metadata map[string]any) {
+func (c *Client) Record(workspaceID, product, metricType string, quantity float64, status string, unitCost *float64, metadata map[string]any) {
 	if workspaceID == "" {
 		c.handleErr(&ValidationError{Msg: "workspaceID required"}, map[string]any{"product": product})
 		return
@@ -128,6 +128,7 @@ func (c *Client) Record(workspaceID, product, metricType string, quantity float6
 		"product":      product,
 		"metric_type":  metricType,
 		"quantity":     quantity,
+		"unit_cost":    unitCost,
 		"status":       status,
 		"is_billable":  isBillable,
 		"metadata":     metaJSON,
@@ -137,31 +138,6 @@ func (c *Client) Record(workspaceID, product, metricType string, quantity float6
 		"ts":           nowISO(),
 	}
 	c.enqueue(UsageTopic, workspaceID, evt)
-}
-
-func (c *Client) Log(workspaceID, level, message, code string, metadata map[string]any) {
-	if workspaceID == "" {
-		c.handleErr(&ValidationError{Msg: "workspaceID required"}, map[string]any{"level": level})
-		return
-	}
-	if err := validateLog(level, message); err != nil {
-		c.handleErr(err, map[string]any{"workspace_id": workspaceID, "level": level})
-		return
-	}
-	metaJSON, _ := safeMarshal(metadata)
-	evt := map[string]any{
-		"workspace_id": workspaceID,
-		"service_name": c.serviceName,
-		"level":        level,
-		"message":      message,
-		"code":         code,
-		"metadata":     metaJSON,
-		"sdk_language": SDKLanguage,
-		"sdk_version":  SDKVersion,
-		"hostname":     c.hostname,
-		"ts":           nowISO(),
-	}
-	c.enqueue(LogsTopic, workspaceID, evt)
 }
 
 func (c *Client) enqueue(topic, partitionKey string, evt map[string]any) {

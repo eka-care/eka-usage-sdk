@@ -3,9 +3,7 @@ from .constants import (
     PRODUCTS,
     METRIC_TYPES,
     STATUSES,
-    LOG_LEVELS,
     USAGE_TOPIC,
-    LOGS_TOPIC,
     SDK_VERSION,
 )
 
@@ -14,8 +12,6 @@ __all__ = [
     "PRODUCTS",
     "METRIC_TYPES",
     "STATUSES",
-    "LOG_LEVELS",
     "USAGE_TOPIC",
-    "LOGS_TOPIC",
     "SDK_VERSION",
 ]

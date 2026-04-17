@@ -2,9 +2,7 @@ SDK_VERSION = "0.1.0"
 SDK_LANGUAGE = "python"
 
 USAGE_TOPIC = "eka.usage.events"
-LOGS_TOPIC = "eka.service.logs"
 USAGE_DLQ = "eka.usage.events.dlq"
-LOGS_DLQ = "eka.service.logs.dlq"
 
 ENV_KAFKA_BROKERS = "EKA_KAFKA_BROKERS"
 ENV_KAFKA_LINGER_MS = "EKA_KAFKA_LINGER_MS"
@@ -30,4 +28,3 @@ METRIC_TYPES = {
 }
 
 STATUSES = ("ok", "error")
-LOG_LEVELS = ("error", "critical", "warning")

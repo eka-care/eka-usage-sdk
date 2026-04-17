@@ -46,8 +46,11 @@ if err != nil { log.Fatal(err) }
 defer client.Shutdown()
 
 // workspaceID is per-call — one client serves all tenants
-client.Record("ws_123", "ekascribe", "transcription_minute", 8.2, "ok", nil)
-client.Log("ws_123", "error", "ffmpeg failed", "FFMPEG_EXIT_137", nil)
+client.Record("ws_123", "ekascribe", "transcription_minute", 8.2, "ok", nil, nil)
+
+// with unit cost
+cost := 0.05
+client.Record("ws_123", "api", "api_call", 1, "ok", &cost, nil)
 ```
 
 Explicit options override env:

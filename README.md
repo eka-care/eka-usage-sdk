@@ -43,25 +43,25 @@ Explicit constructor args always override env.
 
 ## API surface
 
-All three SDKs expose the same four-method surface. One client per process
+All three SDKs expose the same three-method surface. One client per process
 serves all tenants — `workspace_id` is passed per call.
 
 ```
 EkaClient(service_name, ...)
-client.record(workspace_id, product, metric_type, quantity=1.0, status="ok", metadata={})
-client.log(workspace_id, level, message, code=None, metadata={})
+client.record(workspace_id, product, metric_type, quantity=1.0, status="ok", unit_cost=None, metadata={})
 client.shutdown()
 ```
 
-Two Kafka topics carry the data:
+When `status="error"`, the `metadata` JSON string serves as the error log.
+
+All events flow through a single Kafka topic:
 
 | Topic              | Partitions | Retention | Key            |
 |--------------------|-----------:|----------:|----------------|
 | `eka.usage.events` |         10 |     7 d   | `workspace_id` |
-| `eka.service.logs` |          5 |    30 d   | `workspace_id` |
 
 A Kafka Connect ClickHouse sink (`infra/kafka-connect-sink.json`) consumes
-both topics downstream. The SDK has no knowledge of ClickHouse.
+the topic downstream. The SDK has no knowledge of ClickHouse.
 
 ## Principles
 

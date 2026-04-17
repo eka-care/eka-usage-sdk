@@ -18,12 +18,11 @@ from .constants import (
     ENV_KAFKA_COMPRESSION_TYPE,
     ENV_KAFKA_LINGER_MS,
     ENV_KAFKA_RETRIES,
-    LOGS_TOPIC,
     SDK_LANGUAGE,
     SDK_VERSION,
     USAGE_TOPIC,
 )
-from .validation import ValidationError, validate_log, validate_usage
+from .validation import ValidationError, validate_usage
 
 
 def _utc_now_iso() -> str:
@@ -96,6 +95,7 @@ class EkaClient:
         metric_type: str,
         quantity: float = 1.0,
         status: str = "ok",
+        unit_cost: Optional[float] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         try:
@@ -109,6 +109,7 @@ class EkaClient:
                 "product": product,
                 "metric_type": metric_type,
                 "quantity": float(quantity),
+                "unit_cost": float(unit_cost) if unit_cost is not None else None,
                 "status": status,
                 "is_billable": 1 if status == "ok" else 0,
                 "metadata": meta_json,
@@ -120,35 +121,6 @@ class EkaClient:
             self._produce(USAGE_TOPIC, workspace_id, event)
         except Exception as e:
             self._handle_error(e, {"workspace_id": workspace_id, "product": product, "metric_type": metric_type})
-
-    def log(
-        self,
-        workspace_id: str,
-        level: str,
-        message: str,
-        code: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> None:
-        try:
-            if not workspace_id:
-                raise ValidationError("workspace_id required")
-            validate_log(level, message)
-            meta_json = json.dumps(metadata or {}, default=str)
-            event = {
-                "workspace_id": workspace_id,
-                "service_name": self.service_name,
-                "level": level,
-                "message": message,
-                "code": code,
-                "metadata": meta_json,
-                "sdk_language": SDK_LANGUAGE,
-                "sdk_version": SDK_VERSION,
-                "hostname": self.hostname,
-                "ts": _utc_now_iso(),
-            }
-            self._produce(LOGS_TOPIC, workspace_id, event)
-        except Exception as e:
-            self._handle_error(e, {"workspace_id": workspace_id, "level": level})
 
     def _produce(self, topic: str, partition_key: str, event: Dict[str, Any]) -> None:
         payload = json.dumps(event, separators=(",", ":")).encode("utf-8")

@@ -94,44 +94,20 @@ def test_record_different_workspaces_partitioned_separately():
     assert [m["key"] for m in mp.produced] == [b"ws_a", b"ws_b"]
 
 
-def test_log_valid_event():
+def test_record_unit_cost():
     client, mp = make_client()
-    client.log("ws_1", "error", "db timeout", code="DB_TIMEOUT", metadata={"query_ms": 5200})
+    client.record("ws_1", "ekascribe", "transcription_minute", quantity=5.0, unit_cost=0.12)
     client.shutdown()
-    assert len(mp.produced) == 1
     evt = json.loads(mp.produced[0]["value"].decode())
-    assert evt["workspace_id"] == "ws_1"
-    assert evt["level"] == "error"
-    assert evt["message"] == "db timeout"
-    assert evt["code"] == "DB_TIMEOUT"
-    assert mp.produced[0]["topic"] == "eka.service.logs"
-    assert mp.produced[0]["key"] == b"ws_1"
+    assert evt["unit_cost"] == 0.12
 
 
-def test_log_empty_message():
-    errors = []
-    client, mp = make_client(on_error=lambda e, ctx: errors.append((e, ctx)))
-    client.log("ws_1", "error", "")
+def test_record_unit_cost_default_null():
+    client, mp = make_client()
+    client.record("ws_1", "api", "api_call")
     client.shutdown()
-    assert len(mp.produced) == 0
-    assert len(errors) == 1
-
-
-def test_log_invalid_level():
-    errors = []
-    client, mp = make_client(on_error=lambda e, ctx: errors.append((e, ctx)))
-    client.log("ws_1", "info", "hi")
-    client.shutdown()
-    assert len(errors) == 1
-
-
-def test_log_missing_workspace_id():
-    errors = []
-    client, mp = make_client(on_error=lambda e, ctx: errors.append((e, ctx)))
-    client.log("", "error", "boom")
-    client.shutdown()
-    assert len(mp.produced) == 0
-    assert len(errors) == 1
+    evt = json.loads(mp.produced[0]["value"].decode())
+    assert evt["unit_cost"] is None
 
 
 def test_shutdown_flushes_pending():

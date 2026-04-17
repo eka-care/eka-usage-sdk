@@ -27,13 +27,10 @@ create_topic() {
     --config compression.type=producer
 }
 
-# Retention: 7 days for usage, 30 days for logs
 SEVEN_DAYS_MS=$((7 * 24 * 60 * 60 * 1000))
 THIRTY_DAYS_MS=$((30 * 24 * 60 * 60 * 1000))
 
 create_topic "eka.usage.events"     10 "$SEVEN_DAYS_MS"
-create_topic "eka.service.logs"      5 "$THIRTY_DAYS_MS"
 create_topic "eka.usage.events.dlq"  3 "$THIRTY_DAYS_MS"
-create_topic "eka.service.logs.dlq"  3 "$THIRTY_DAYS_MS"
 
 echo ">> done"
