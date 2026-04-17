@@ -7,11 +7,11 @@ from Eka Care services to Kafka.
 
 **Python** (pip / uv):
 ```bash
-pip install git+https://github.com/eka-care/eka-usage-sdk.git#subdirectory=sdks/python
+pip install git+ssh://git@github.com/eka-care/eka-usage-sdk.git#subdirectory=sdks/python
 ```
 Or in `pyproject.toml`:
 ```toml
-dependencies = ["eka-usage-sdk @ git+https://github.com/eka-care/eka-usage-sdk.git#subdirectory=sdks/python"]
+dependencies = ["eka-usage-sdk @ git+ssh://git@github.com/eka-care/eka-usage-sdk.git#subdirectory=sdks/python"]
 ```
 
 **Go**:

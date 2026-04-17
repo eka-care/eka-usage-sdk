@@ -7,7 +7,7 @@ One client per process, many workspaces per client.
 ## Install
 
 ```bash
-pip install git+https://github.com/eka-care/eka-usage-sdk.git#subdirectory=sdks/python
+pip install git+ssh://git@github.com/eka-care/eka-usage-sdk.git#subdirectory=sdks/python
 ```
 
 ## Configure
