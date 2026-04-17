@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+
+# TypeScript / Node
+node_modules/
+dist/
+*.tgz
+
+# Go
+/sdks/go/examples/basic/basic
+
+# IDE / tools
+.vscode/
+.idea/
+.claude/
+
+# OS
+.DS_Store

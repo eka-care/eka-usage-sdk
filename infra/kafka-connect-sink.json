@@ -1,0 +1,37 @@
+{
+  "name": "eka-usage-clickhouse-sink",
+  "config": {
+    "connector.class": "com.clickhouse.kafka.connect.ClickHouseSinkConnector",
+    "tasks.max": "4",
+    "topics": "eka.usage.events,eka.service.logs",
+    "hostname": "clickhouse.internal",
+    "port": "8443",
+    "ssl": "true",
+    "database": "eka_usage",
+    "username": "kafka_connect",
+    "password": "${file:/etc/kafka-connect/secrets.properties:clickhouse_password}",
+
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false",
+
+    "errors.tolerance": "all",
+    "errors.deadletterqueue.topic.name": "eka.usage.events.dlq",
+    "errors.deadletterqueue.topic.replication.factor": "3",
+    "errors.deadletterqueue.context.headers.enable": "true",
+    "errors.log.enable": "true",
+    "errors.log.include.messages": "true",
+
+    "topic2TableMap": "eka.usage.events=usage_events,eka.service.logs=service_logs",
+
+    "consumer.override.max.poll.records": "5000",
+    "consumer.override.fetch.min.bytes": "1048576",
+    "consumer.override.fetch.max.wait.ms": "500",
+
+    "transforms": "tsParse",
+    "transforms.tsParse.type": "org.apache.kafka.connect.transforms.TimestampConverter$Value",
+    "transforms.tsParse.field": "ts",
+    "transforms.tsParse.target.type": "Timestamp",
+    "transforms.tsParse.format": "yyyy-MM-dd'T'HH:mm:ss.SSSX"
+  }
+}
