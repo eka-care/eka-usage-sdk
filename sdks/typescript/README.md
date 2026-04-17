@@ -7,7 +7,7 @@ One client per process, many workspaces per client.
 ## Install
 
 ```bash
-npm install @eka-care/usage-sdk --registry=https://npm.pkg.github.com
+npm install @eka-care/usage-sdk
 ```
 
 ## Configure

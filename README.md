@@ -22,7 +22,7 @@ Build with `-tags confluent` to link the real Kafka producer.
 
 **TypeScript / Node.js** (published to GitHub Packages on `ts-v*` tags):
 ```bash
-npm install @eka-care/usage-sdk --registry=https://npm.pkg.github.com
+npm install @eka-care/usage-sdk
 ```
 
 ## Configuration

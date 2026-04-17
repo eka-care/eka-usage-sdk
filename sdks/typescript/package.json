@@ -16,7 +16,7 @@
     "directory": "sdks/typescript"
   },
   "publishConfig": {
-    "@eka-care:registry": "https://npm.pkg.github.com"
+    "access": "public"
   },
   "dependencies": {
     "kafkajs": "^2.2.4"
