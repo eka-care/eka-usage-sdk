@@ -21,14 +21,18 @@ const (
 	DefaultRetries         = 5
 )
 
-var Products = []string{"ekascribe", "mr_ai", "agent", "api", "webhooks"}
+var Products = []string{"ekascribe", "mr_ai", "agent", "api", "webhooks", "emr_tools", "clinical_tools", "comms", "abdm"}
 
 var MetricTypes = map[string][]string{
 	"ekascribe": {"transcription_minute", "transcription_session"},
 	"mr_ai":     {"mr_record_upload", "mr_page_processed"},
 	"agent":     {"chat_session", "tool_call", "tool_call_error", "credit_consumed", "input_token", "output_token"},
 	"api":       {"api_call", "api_error"},
-	"webhooks":  {"webhook_push", "webhook_delivery_failed"},
+	"webhooks":       {"webhook_push", "webhook_delivery_failed"},
+	"emr_tools":      {"tool_call", "tool_call_error"},
+	"clinical_tools": {"tool_call", "tool_call_error"},
+	"comms":          {"sms", "whatsapp", "email"},
+	"abdm":           {"api_call", "abha", "consent", "fetch", "storage"},
 }
 
 var Statuses = []string{"ok", "error"}

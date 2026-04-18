@@ -15,6 +15,10 @@ export const PRODUCTS = [
   "agent",
   "api",
   "webhooks",
+  "emr_tools",
+  "clinical_tools",
+  "comms",
+  "abdm",
 ] as const;
 export type Product = (typeof PRODUCTS)[number];
 
@@ -24,6 +28,10 @@ export const METRIC_TYPES: Record<Product, readonly string[]> = {
   agent: ["chat_session", "tool_call", "tool_call_error", "credit_consumed", "input_token", "output_token"],
   api: ["api_call", "api_error"],
   webhooks: ["webhook_push", "webhook_delivery_failed"],
+  emr_tools: ["tool_call", "tool_call_error"],
+  clinical_tools: ["tool_call", "tool_call_error"],
+  comms: ["sms", "whatsapp", "email"],
+  abdm: ["api_call", "abha", "consent", "fetch", "storage"],
 };
 
 export const STATUSES = ["ok", "error"] as const;

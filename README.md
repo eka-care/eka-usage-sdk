@@ -63,6 +63,10 @@ When `status="error"`, the `metadata` JSON string serves as the error log.
 | `agent`     | `chat_session`, `tool_call`, `tool_call_error`, `credit_consumed`, `input_token`, `output_token`   |
 | `api`       | `api_call`, `api_error`                                                                           |
 | `webhooks`  | `webhook_push`, `webhook_delivery_failed`                                                         |
+| `emr_tools` | `tool_call`, `tool_call_error`                                                                    |
+| `clinical_tools` | `tool_call`, `tool_call_error`                                                               |
+| `comms`     | `sms`, `whatsapp`, `email`                                                                        |
+| `abdm`      | `api_call`, `abha`, `consent`, `fetch`, `storage`                                                 |
 
 **Statuses:** `ok` (billable, `is_billable=1`) or `error` (non-billable, `is_billable=0`)
 
