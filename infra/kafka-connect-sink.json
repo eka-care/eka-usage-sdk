@@ -4,7 +4,7 @@
     "connector.class": "com.clickhouse.kafka.connect.ClickHouseSinkConnector",
     "tasks.max": "4",
     "topics": "eka.usage.events",
-    "hostname": "clickhouse.internal",
+    "hostname": "${CLICKHOUSE_HOST}",
     "port": "8443",
     "ssl": "true",
     "database": "eka_usage",

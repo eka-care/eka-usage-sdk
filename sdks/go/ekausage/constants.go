@@ -26,7 +26,7 @@ var Products = []string{"ekascribe", "mr_ai", "agent", "api", "webhooks"}
 var MetricTypes = map[string][]string{
 	"ekascribe": {"transcription_minute", "transcription_session"},
 	"mr_ai":     {"mr_record_upload", "mr_page_processed"},
-	"agent":     {"chat_session", "tool_call", "tool_call_error", "credit_consumed"},
+	"agent":     {"chat_session", "tool_call", "tool_call_error", "credit_consumed", "input_token", "output_token"},
 	"api":       {"api_call", "api_error"},
 	"webhooks":  {"webhook_push", "webhook_delivery_failed"},
 }
