@@ -54,6 +54,20 @@ client.shutdown()
 
 When `status="error"`, the `metadata` JSON string serves as the error log.
 
+## Products and metric types
+
+| Product     | Metric types                                                                                      |
+|-------------|---------------------------------------------------------------------------------------------------|
+| `ekascribe` | `transcription_minute`, `transcription_session`                                                   |
+| `mr_ai`     | `mr_record_upload`, `mr_page_processed`                                                           |
+| `agent`     | `chat_session`, `tool_call`, `tool_call_error`, `credit_consumed`, `input_token`, `output_token`   |
+| `api`       | `api_call`, `api_error`                                                                           |
+| `webhooks`  | `webhook_push`, `webhook_delivery_failed`                                                         |
+
+**Statuses:** `ok` (billable, `is_billable=1`) or `error` (non-billable, `is_billable=0`)
+
+The SDK validates these at call time — invalid values go to `on_error`, never to Kafka.
+
 All events flow through a single Kafka topic:
 
 | Topic              | Partitions | Retention | Key            |
@@ -65,7 +79,7 @@ the topic downstream. The SDK has no knowledge of ClickHouse.
 
 ## Principles
 
-- **Never block the caller.** `record` and `log` return immediately.
+- **Never block the caller.** `record` returns immediately.
 - **Never crash the host.** All Kafka errors are caught and routed to `on_error`.
 - **Never require connection management.** The SDK owns the producer lifecycle.
 - **Always enrich server-side fields.** `ts`, `sdk_version`, and `hostname`
