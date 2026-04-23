@@ -32,7 +32,7 @@ var MetricTypes = map[string][]string{
 	"emr_tools":      {"tool_call", "tool_call_error"},
 	"clinical_tools": {"tool_call", "tool_call_error"},
 	"comms":          {"sms", "whatsapp", "email"},
-	"abdm":           {"api_call", "abha", "consent", "fetch", "storage"},
+	"abdm":           {"abha", "linking", "data_transfer"},
 }
 
 var Statuses = []string{"ok", "error"}
