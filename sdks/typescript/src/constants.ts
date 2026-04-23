@@ -31,7 +31,7 @@ export const METRIC_TYPES: Record<Product, readonly string[]> = {
   emr_tools: ["tool_call", "tool_call_error"],
   clinical_tools: ["tool_call", "tool_call_error"],
   comms: ["sms", "whatsapp", "email"],
-  abdm: ["api_call", "abha", "consent", "fetch", "storage"],
+  abdm: ["abha", "linking", "data_transfer"],
 };
 
 export const STATUSES = ["ok", "error"] as const;
