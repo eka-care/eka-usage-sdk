@@ -31,6 +31,20 @@ func WithDebug(b bool) Option                    { return func(c *Config) { c.De
 func WithBufferSize(n int) Option                { return func(c *Config) { c.BufferSize = n } }
 func WithProducer(p Producer) Option             { return func(c *Config) { c.Producer = p } }
 
+// recordOpts carries the JWT-derived billing tags for a single Record call.
+type recordOpts struct {
+	idp string
+	cID string
+}
+
+type RecordOption func(*recordOpts)
+
+// WithIDP sets the caller's idp claim. is_billable is 1 only when idp == "api-key".
+func WithIDP(idp string) RecordOption { return func(o *recordOpts) { o.idp = idp } }
+
+// WithCID sets the caller's API key identifier (the JWT c-id claim).
+func WithCID(cID string) RecordOption { return func(o *recordOpts) { o.cID = cID } }
+
 type queuedMsg struct {
 	topic string
 	key   []byte
@@ -102,7 +116,7 @@ func New(serviceName string, opts ...Option) (*Client, error) {
 	return c, nil
 }
 
-func (c *Client) Record(workspaceID, product, metricType string, quantity float64, status string, unitCost *float64, metadata map[string]any) {
+func (c *Client) Record(workspaceID, product, metricType string, quantity float64, status string, unitCost *float64, metadata map[string]any, opts ...RecordOption) {
 	if workspaceID == "" {
 		c.handleErr(&ValidationError{Msg: "workspaceID required"}, map[string]any{"product": product})
 		return
@@ -117,9 +131,13 @@ func (c *Client) Record(workspaceID, product, metricType string, quantity float6
 		c.handleErr(err, map[string]any{"workspace_id": workspaceID, "product": product, "metric_type": metricType})
 		return
 	}
+	var ro recordOpts
+	for _, o := range opts {
+		o(&ro)
+	}
 	metaJSON, _ := safeMarshal(metadata)
 	isBillable := 0
-	if status == "ok" {
+	if status == "ok" && ro.idp == "api-key" {
 		isBillable = 1
 	}
 	evt := map[string]any{
@@ -131,6 +149,7 @@ func (c *Client) Record(workspaceID, product, metricType string, quantity float6
 		"unit_cost":    unitCost,
 		"status":       status,
 		"is_billable":  isBillable,
+		"c_id":         ro.cID,
 		"metadata":     metaJSON,
 		"sdk_language": SDKLanguage,
 		"sdk_version":  SDKVersion,

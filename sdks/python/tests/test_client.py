@@ -19,7 +19,7 @@ def make_client(**kwargs):
 
 def test_record_valid_event():
     client, mp = make_client()
-    client.record("ws_1", "ekascribe", "transcription_minute", quantity=12.5)
+    client.record("ws_1", "ekascribe", "transcription_minute", quantity=12.5, idp="api-key")
     client.shutdown()
     assert len(mp.produced) == 1
     evt = json.loads(mp.produced[0]["value"].decode())
@@ -79,11 +79,67 @@ def test_record_non_serializable():
 
 def test_record_error_status_sets_is_billable_zero():
     client, mp = make_client()
-    client.record("ws_1", "api", "api_error", status="error")
+    client.record("ws_1", "api", "api_error", status="error", idp="api-key")
     client.shutdown()
     evt = json.loads(mp.produced[0]["value"].decode())
     assert evt["is_billable"] == 0
     assert evt["status"] == "error"
+
+
+def test_is_billable_one_for_api_key_idp():
+    client, mp = make_client()
+    client.record("ws_1", "comms", "whatsapp", quantity=1, idp="api-key", c_id="ak_xyz")
+    client.shutdown()
+    evt = json.loads(mp.produced[0]["value"].decode())
+    assert evt["is_billable"] == 1
+    assert evt["c_id"] == "ak_xyz"
+
+
+def test_is_billable_zero_for_saas_idp():
+    client, mp = make_client()
+    client.record("ws_1", "api", "api_call", idp="google")
+    client.shutdown()
+    evt = json.loads(mp.produced[0]["value"].decode())
+    assert evt["is_billable"] == 0
+    assert evt["c_id"] == ""
+
+
+def test_is_billable_zero_for_password_idp():
+    client, mp = make_client()
+    client.record("ws_1", "api", "api_call", idp="pwd")
+    client.shutdown()
+    evt = json.loads(mp.produced[0]["value"].decode())
+    assert evt["is_billable"] == 0
+
+
+def test_missing_idp_defaults_is_billable_zero_in_payload():
+    # The SDK always writes is_billable explicitly. With no idp, it emits 0.
+    # The ClickHouse column default of 1 only applies when a producer bypasses
+    # this SDK entirely (no field on the wire).
+    client, mp = make_client()
+    client.record("ws_1", "api", "api_call")  # no idp
+    client.shutdown()
+    evt = json.loads(mp.produced[0]["value"].decode())
+    assert evt["is_billable"] == 0
+
+
+def test_missing_c_id_emits_empty_string():
+    client, mp = make_client()
+    client.record("ws_1", "api", "api_call", idp="api-key")  # no c_id
+    client.shutdown()
+    evt = json.loads(mp.produced[0]["value"].decode())
+    assert evt["c_id"] == ""
+
+
+def test_no_caller_claims_does_not_crash():
+    # Background-job / scheduled-task path: no idp/c_id passed. Emit with
+    # is_billable=0 and c_id='' rather than raising.
+    client, mp = make_client()
+    client.record("ws_1", "api", "api_call", idp=None, c_id=None)
+    client.shutdown()
+    evt = json.loads(mp.produced[0]["value"].decode())
+    assert evt["is_billable"] == 0
+    assert evt["c_id"] == ""
 
 
 def test_record_different_workspaces_partitioned_separately():

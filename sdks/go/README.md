@@ -51,6 +51,10 @@ client.Record("ws_123", "ekascribe", "transcription_minute", 8.2, "ok", nil, nil
 // with unit cost
 cost := 0.05
 client.Record("ws_123", "api", "api_call", 1, "ok", &cost, nil)
+
+// billing tags from the request JWT — is_billable=1 only for api-key callers
+client.Record("ws_123", "comms", "whatsapp", 1, "ok", nil, nil,
+    ekausage.WithIDP("api-key"), ekausage.WithCID("ak_a3f2b9c1"))
 ```
 
 Explicit options override env:

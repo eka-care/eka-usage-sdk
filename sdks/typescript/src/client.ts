@@ -148,6 +148,8 @@ export class EkaClient {
     status: Status = "ok",
     unitCost?: number | null,
     metadata: Record<string, unknown> = {},
+    idp?: string,
+    cId?: string,
   ): void {
     try {
       if (!workspaceId) throw new Error("workspaceId required");
@@ -160,7 +162,8 @@ export class EkaClient {
         quantity: Number(quantity),
         unit_cost: unitCost != null ? Number(unitCost) : null,
         status,
-        is_billable: status === "ok" ? 1 : 0,
+        is_billable: status === "ok" && idp === "api-key" ? 1 : 0,
+        c_id: cId ?? "",
         metadata: safeStringify(metadata),
         sdk_language: SDK_LANGUAGE,
         sdk_version: SDK_VERSION,

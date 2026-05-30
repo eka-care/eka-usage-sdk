@@ -59,7 +59,7 @@ func float64Ptr(v float64) *float64 { return &v }
 
 func TestRecordValidEvent(t *testing.T) {
 	c, mp := newTestClient(t, nil)
-	c.Record("ws_1", "ekascribe", "transcription_minute", 12.5, "ok", nil, nil)
+	c.Record("ws_1", "ekascribe", "transcription_minute", 12.5, "ok", nil, nil, WithIDP("api-key"))
 	c.Shutdown()
 	if len(mp.Sent()) != 1 {
 		t.Fatalf("expected 1 sent, got %d", len(mp.Sent()))
@@ -116,12 +116,87 @@ func TestRecordMissingWorkspaceID(t *testing.T) {
 
 func TestRecordErrorStatusSetsBillableZero(t *testing.T) {
 	c, mp := newTestClient(t, nil)
-	c.Record("ws_1", "api", "api_error", 1, "error", nil, nil)
+	c.Record("ws_1", "api", "api_error", 1, "error", nil, nil, WithIDP("api-key"))
 	c.Shutdown()
 	var evt map[string]any
 	_ = json.Unmarshal(mp.Sent()[0].value, &evt)
 	if evt["is_billable"].(float64) != 0 {
 		t.Fatalf("is_billable should be 0, got %v", evt["is_billable"])
+	}
+}
+
+func TestIsBillableOneForAPIKeyIDP(t *testing.T) {
+	c, mp := newTestClient(t, nil)
+	c.Record("ws_1", "comms", "whatsapp", 1, "ok", nil, nil, WithIDP("api-key"), WithCID("ak_xyz"))
+	c.Shutdown()
+	var evt map[string]any
+	_ = json.Unmarshal(mp.Sent()[0].value, &evt)
+	if evt["is_billable"].(float64) != 1 {
+		t.Fatalf("is_billable should be 1, got %v", evt["is_billable"])
+	}
+	if evt["c_id"] != "ak_xyz" {
+		t.Fatalf("c_id should be ak_xyz, got %v", evt["c_id"])
+	}
+}
+
+func TestIsBillableZeroForSaaSIDP(t *testing.T) {
+	c, mp := newTestClient(t, nil)
+	c.Record("ws_1", "api", "api_call", 1, "ok", nil, nil, WithIDP("google"))
+	c.Shutdown()
+	var evt map[string]any
+	_ = json.Unmarshal(mp.Sent()[0].value, &evt)
+	if evt["is_billable"].(float64) != 0 {
+		t.Fatalf("is_billable should be 0, got %v", evt["is_billable"])
+	}
+	if evt["c_id"] != "" {
+		t.Fatalf("c_id should be empty, got %v", evt["c_id"])
+	}
+}
+
+func TestIsBillableZeroForPasswordIDP(t *testing.T) {
+	c, mp := newTestClient(t, nil)
+	c.Record("ws_1", "api", "api_call", 1, "ok", nil, nil, WithIDP("pwd"))
+	c.Shutdown()
+	var evt map[string]any
+	_ = json.Unmarshal(mp.Sent()[0].value, &evt)
+	if evt["is_billable"].(float64) != 0 {
+		t.Fatalf("is_billable should be 0, got %v", evt["is_billable"])
+	}
+}
+
+func TestMissingIDPDefaultsBillableZero(t *testing.T) {
+	c, mp := newTestClient(t, nil)
+	c.Record("ws_1", "api", "api_call", 1, "ok", nil, nil)
+	c.Shutdown()
+	var evt map[string]any
+	_ = json.Unmarshal(mp.Sent()[0].value, &evt)
+	if evt["is_billable"].(float64) != 0 {
+		t.Fatalf("is_billable should be 0, got %v", evt["is_billable"])
+	}
+}
+
+func TestMissingCIDEmitsEmptyString(t *testing.T) {
+	c, mp := newTestClient(t, nil)
+	c.Record("ws_1", "api", "api_call", 1, "ok", nil, nil, WithIDP("api-key"))
+	c.Shutdown()
+	var evt map[string]any
+	_ = json.Unmarshal(mp.Sent()[0].value, &evt)
+	if evt["c_id"] != "" {
+		t.Fatalf("c_id should be empty, got %v", evt["c_id"])
+	}
+}
+
+func TestNoCallerClaimsNoCrash(t *testing.T) {
+	c, mp := newTestClient(t, nil)
+	c.Record("ws_1", "api", "api_call", 1, "ok", nil, nil)
+	c.Shutdown()
+	var evt map[string]any
+	_ = json.Unmarshal(mp.Sent()[0].value, &evt)
+	if evt["is_billable"].(float64) != 0 {
+		t.Fatalf("is_billable should be 0, got %v", evt["is_billable"])
+	}
+	if evt["c_id"] != "" {
+		t.Fatalf("c_id should be empty, got %v", evt["c_id"])
 	}
 }
 

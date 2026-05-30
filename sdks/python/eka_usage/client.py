@@ -97,6 +97,8 @@ class EkaClient:
         status: str = "ok",
         unit_cost: Optional[float] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        idp: Optional[str] = None,
+        c_id: Optional[str] = None,
     ) -> None:
         try:
             if not workspace_id:
@@ -111,7 +113,8 @@ class EkaClient:
                 "quantity": float(quantity),
                 "unit_cost": float(unit_cost) if unit_cost is not None else None,
                 "status": status,
-                "is_billable": 1 if status == "ok" else 0,
+                "is_billable": 1 if (status == "ok" and idp == "api-key") else 0,
+                "c_id": c_id or "",
                 "metadata": meta_json,
                 "sdk_language": SDK_LANGUAGE,
                 "sdk_version": SDK_VERSION,

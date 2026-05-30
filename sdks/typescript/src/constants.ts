@@ -1,4 +1,4 @@
-export const SDK_VERSION = "0.1.1";
+export const SDK_VERSION = "0.2.0";
 export const SDK_LANGUAGE = "typescript";
 
 export const USAGE_TOPIC = "eka.usage.events";
@@ -25,11 +25,11 @@ export type Product = (typeof PRODUCTS)[number];
 export const METRIC_TYPES: Record<Product, readonly string[]> = {
   ekascribe: ["transcription_minute", "transcription_session"],
   mr_ai: ["mr_record_upload", "mr_page_processed"],
-  agent: ["chat_session", "tool_call", "tool_call_error", "credit_consumed", "input_token", "output_token"],
+  agent: ["chat_session", "tool_call", "input_token", "output_token", "message"],
   api: ["api_call", "api_error"],
   webhooks: ["webhook_push", "webhook_delivery_failed"],
-  emr_tools: ["tool_call", "tool_call_error"],
-  clinical_tools: ["tool_call", "tool_call_error"],
+  emr_tools: ["tool_call"],
+  clinical_tools: ["tool_call"],
   comms: ["sms", "whatsapp", "email"],
   abdm: ["abha", "linking", "data_transfer"],
 };

@@ -42,6 +42,9 @@ client.record("ws_123", "ekascribe", "transcription_minute", quantity=8.2)
 client.record("ws_123", "api", "api_error", status="error",
               metadata={"error": "upstream timeout", "endpoint": "/v1/records"})
 
+# billing tags from the request JWT — is_billable=1 only for api-key callers
+client.record("ws_123", "comms", "whatsapp", idp="api-key", c_id="ak_a3f2b9c1")
+
 client.shutdown()
 ```
 

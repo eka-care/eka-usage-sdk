@@ -17,7 +17,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 describe("EkaClient.record", () => {
   test("valid event", async () => {
     const { client, mp } = makeClient();
-    client.record("ws_1", "ekascribe", "transcription_minute", 12.5);
+    client.record("ws_1", "ekascribe", "transcription_minute", 12.5, "ok", undefined, {}, "api-key");
     await client.shutdown();
     expect(mp.sent).toHaveLength(1);
     const evt = JSON.parse(mp.sent[0].value);
@@ -72,10 +72,58 @@ describe("EkaClient.record", () => {
 
   test("error status sets is_billable=0", async () => {
     const { client, mp } = makeClient();
-    client.record("ws_1", "api", "api_error", 1, "error");
+    client.record("ws_1", "api", "api_error", 1, "error", undefined, {}, "api-key");
     await client.shutdown();
     const evt = JSON.parse(mp.sent[0].value);
     expect(evt.is_billable).toBe(0);
+  });
+
+  test("is_billable=1 for api-key idp", async () => {
+    const { client, mp } = makeClient();
+    client.record("ws_1", "comms", "whatsapp", 1, "ok", undefined, {}, "api-key", "ak_xyz");
+    await client.shutdown();
+    const evt = JSON.parse(mp.sent[0].value);
+    expect(evt.is_billable).toBe(1);
+    expect(evt.c_id).toBe("ak_xyz");
+  });
+
+  test("is_billable=0 for saas idp", async () => {
+    const { client, mp } = makeClient();
+    client.record("ws_1", "api", "api_call", 1, "ok", undefined, {}, "google");
+    await client.shutdown();
+    const evt = JSON.parse(mp.sent[0].value);
+    expect(evt.is_billable).toBe(0);
+    expect(evt.c_id).toBe("");
+  });
+
+  test("is_billable=0 for password idp", async () => {
+    const { client, mp } = makeClient();
+    client.record("ws_1", "api", "api_call", 1, "ok", undefined, {}, "pwd");
+    await client.shutdown();
+    expect(JSON.parse(mp.sent[0].value).is_billable).toBe(0);
+  });
+
+  test("missing idp defaults is_billable=0", async () => {
+    const { client, mp } = makeClient();
+    client.record("ws_1", "api", "api_call");
+    await client.shutdown();
+    expect(JSON.parse(mp.sent[0].value).is_billable).toBe(0);
+  });
+
+  test("missing c_id emits empty string", async () => {
+    const { client, mp } = makeClient();
+    client.record("ws_1", "api", "api_call", 1, "ok", undefined, {}, "api-key");
+    await client.shutdown();
+    expect(JSON.parse(mp.sent[0].value).c_id).toBe("");
+  });
+
+  test("no caller claims does not crash", async () => {
+    const { client, mp } = makeClient();
+    client.record("ws_1", "api", "api_call");
+    await client.shutdown();
+    const evt = JSON.parse(mp.sent[0].value);
+    expect(evt.is_billable).toBe(0);
+    expect(evt.c_id).toBe("");
   });
 
   test("different workspaces partitioned separately", async () => {

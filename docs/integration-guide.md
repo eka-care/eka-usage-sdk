@@ -20,6 +20,33 @@ a background worker. Errors never propagate to the caller — they go to the
 4. Never block the hot path. If you're tempted to `await` a `record` call,
    you're using the wrong API.
 
+## Billing tags
+
+Each event carries an `is_billable` flag that the downstream reconciler uses to
+decide whether to deduct credit. It is `1` only for a successful API-key call:
+`status == "ok"` **and** `idp == "api-key"`. Everything else (errors, SaaS /
+subscription / internal callers, background jobs) emits `is_billable=0`.
+
+`idp` and `c_id` come from the request JWT's `idp` and `c-id` claims. Extract
+them in your service and pass them per call — the SDK does no token parsing or
+I/O. `c_id` (the API key identifier) is copied verbatim for per-API-key
+analytics and does not influence billing. Both are optional; omit them for
+events with no request context.
+
+```python
+# Python — trailing keyword args
+client.record("ws_123", "comms", "whatsapp", idp=claims["idp"], c_id=claims.get("c-id"))
+```
+```ts
+// TypeScript — trailing args (idp, cId)
+client.record("ws_123", "comms", "whatsapp", 1, "ok", undefined, {}, claims.idp, claims["c-id"]);
+```
+```go
+// Go — functional options
+client.Record("ws_123", "comms", "whatsapp", 1, "ok", nil, nil,
+    ekausage.WithIDP(idp), ekausage.WithCID(cID))
+```
+
 ---
 
 ## Python

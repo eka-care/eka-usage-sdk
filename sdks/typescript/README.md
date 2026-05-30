@@ -43,6 +43,9 @@ client.record("ws_123", "ekascribe", "transcription_minute", 8.2);
 client.record("ws_123", "api", "api_error", 1, "error", undefined,
               { error: "upstream timeout", endpoint: "/v1/records" });
 
+// billing tags from the request JWT — is_billable=1 only for api-key callers
+client.record("ws_123", "comms", "whatsapp", 1, "ok", undefined, {}, "api-key", "ak_a3f2b9c1");
+
 process.on("SIGTERM", () => client.shutdown());
 ```
 

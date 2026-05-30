@@ -48,11 +48,28 @@ serves all tenants — `workspace_id` is passed per call.
 
 ```
 EkaClient(service_name, ...)
-client.record(workspace_id, product, metric_type, quantity=1.0, status="ok", unit_cost=None, metadata={})
+client.record(workspace_id, product, metric_type, quantity=1.0, status="ok", unit_cost=None, metadata={}, idp=None, c_id=None)
 client.shutdown()
 ```
 
 When `status="error"`, the `metadata` JSON string serves as the error log.
+
+### Billing tags (`idp` / `c_id`)
+
+Two optional per-call fields carry the JWT-derived billing classification.
+The calling service extracts them from the request's JWT (the SDK does no
+token parsing or I/O of its own) and passes them through:
+
+- `idp` — the JWT `idp` claim. Drives `is_billable` (see below).
+- `c_id` — the JWT `c-id` claim (the API key identifier). Copied verbatim
+  into the event as `c_id` for downstream per-API-key analytics; it does not
+  affect billing. Defaults to `""` when absent.
+
+Go passes these via `RecordOption`s: `WithIDP("api-key")`, `WithCID("ak_...")`.
+TypeScript takes them as the trailing `idp` / `cId` arguments.
+
+Events emitted with no caller context (background jobs, scheduled tasks) simply
+omit `idp`/`c_id`, so they emit `is_billable=0` and `c_id=""`.
 
 ## Products and metric types
 
@@ -60,17 +77,22 @@ When `status="error"`, the `metadata` JSON string serves as the error log.
 |-------------|---------------------------------------------------------------------------------------------------|
 | `ekascribe` | `transcription_minute`, `transcription_session`                                                   |
 | `mr_ai`     | `mr_record_upload`, `mr_page_processed`                                                           |
-| `agent`     | `chat_session`, `tool_call`, `tool_call_error`, `credit_consumed`, `input_token`, `output_token`   |
+| `agent`     | `chat_session`, `tool_call`, `input_token`, `output_token`, `message`                             |
 | `api`       | `api_call`, `api_error`                                                                           |
 | `webhooks`  | `webhook_push`, `webhook_delivery_failed`                                                         |
-| `emr_tools` | `tool_call`, `tool_call_error`                                                                    |
-| `clinical_tools` | `tool_call`, `tool_call_error`                                                               |
+| `emr_tools` | `tool_call`                                                                                       |
+| `clinical_tools` | `tool_call`                                                                                  |
 | `comms`     | `sms`, `whatsapp`, `email`                                                                        |
-| `abdm`      | `api_call`, `abha`, `consent`, `fetch`, `storage`                                                 |
+| `abdm`      | `abha`, `linking`, `data_transfer`                                                                |
 
-**Statuses:** `ok` (billable, `is_billable=1`) or `error` (non-billable, `is_billable=0`)
+**Statuses:** `ok` or `error`. When `status="error"`, the `metadata` JSON string serves as the error log.
 
-The SDK validates these at call time — invalid values go to `on_error`, never to Kafka.
+The SDK validates products, metric types, and statuses at call time — invalid values go to `on_error`, never to Kafka.
+
+**`is_billable`** is set to `1` only when the event is a successful outcome **and** it
+originates from an API caller — i.e. `status == "ok"` **and** `idp == "api-key"`.
+Every other case (error outcomes, SaaS/subscription/internal callers, or no caller
+context) emits `is_billable=0`, and the downstream reconciler skips it.
 
 All events flow through a single Kafka topic:
 
