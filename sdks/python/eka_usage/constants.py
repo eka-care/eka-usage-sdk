@@ -17,7 +17,7 @@ DEFAULT_COMPRESSION_TYPE = "lz4"
 DEFAULT_ACKS = "1"
 DEFAULT_RETRIES = 5
 
-PRODUCTS = ("ekascribe", "mr_ai", "agent", "api", "webhooks", "emr_tools", "clinical_tools", "comms", "abdm")
+PRODUCTS = ("ekascribe", "mr_ai", "agent", "api", "webhooks", "emr_tools", "clinical_tools", "comms", "abdm", "assessments")
 
 METRIC_TYPES = {
     "ekascribe": ("transcription_minute", "transcription_session"),
@@ -29,6 +29,7 @@ METRIC_TYPES = {
     "clinical_tools": ("tool_call",),
     "comms": ("sms", "whatsapp", "email"),
     "abdm": ("abha", "linking", "data_transfer"),
+    "assessments": ("init",),
 }
 
 STATUSES = ("ok", "error")
